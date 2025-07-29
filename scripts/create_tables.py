@@ -1,9 +1,11 @@
 import psycopg2
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 def create_tables():
-    load_dotenv(dotenv_path="secrets.env")
+    env_path = Path("secrects.env")
+    load_dotenv(dotenv_path=env_path)
 
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -13,9 +15,9 @@ def create_tables():
     )
     cursor = conn.cursor()
 
-    # Tabela de voos
+    # Flights table
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS flights_2008 (
+        CREATE TABLE IF NOT EXISTS flights_2007 (
             Year INT,
             Month INT,
             DayofMonth INT,
@@ -48,7 +50,7 @@ def create_tables():
         );
     """)
 
-    # Tabela de aeroportos
+    # Airports table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS airports (
             iata TEXT PRIMARY KEY,
@@ -61,7 +63,7 @@ def create_tables():
         );
     """)
 
-    # Tabela de companhias aéreas
+    # Carriers table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS carriers (
             Code TEXT PRIMARY KEY,
@@ -69,7 +71,7 @@ def create_tables():
         );
     """)
 
-    # Tabela de aeronaves
+    # Planes table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS plane_data (
             tailnum TEXT PRIMARY KEY,
@@ -87,7 +89,7 @@ def create_tables():
     conn.commit()
     cursor.close()
     conn.close()
-    print("Tabelas criadas com sucesso.")
+    print("Tables created successfully.")
 
 if __name__ == "__main__":
     create_tables()

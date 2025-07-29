@@ -3,6 +3,7 @@ import psycopg2
 from io import StringIO
 import bz2
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 def load_flights(bz2_path):
@@ -18,7 +19,8 @@ def load_flights(bz2_path):
     df["CancellationCode"] = df["CancellationCode"].astype(str).str.strip()
 
     # 3. Connect to the database
-    load_dotenv(dotenv_path="secrets.env")
+    env_path = Path("secrects.env")
+    load_dotenv(dotenv_path=env_path)
 
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -29,23 +31,33 @@ def load_flights(bz2_path):
     cursor = conn.cursor()
 
     # 4. Truncate the table before inserting
-    print("Clearing previous data from flights_2008...")
-    cursor.execute("TRUNCATE TABLE flights_2008;")
+    print("Clearing previous data from flights_2007...")
+    cursor.execute("TRUNCATE TABLE flights_2007;")
     conn.commit()
 
+    int_columns = [
+        "Year", "Month", "DayofMonth", "DayOfWeek", "DepTime", "CRSDepTime", "ArrTime", "CRSArrTime",
+        "FlightNum", "ActualElapsedTime", "CRSElapsedTime", "AirTime", "ArrDelay", "DepDelay",
+        "Distance", "TaxiIn", "TaxiOut", "Cancelled", "Diverted"
+    ]
+
+    for col in int_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+            
     # 5. Send data using COPY from memory
     print("Loading data into PostgreSQL...")
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False, header=False)
     csv_buffer.seek(0)
 
-    cursor.copy_expert("COPY flights_2008 FROM STDIN WITH CSV", csv_buffer)
+    cursor.copy_expert("COPY flights_2007 FROM STDIN WITH CSV", csv_buffer)
     conn.commit()
 
     # 6. Close connection
     cursor.close()
     conn.close()
-    print("✅ flights_2008 loaded successfully.")
+    print("✅ flights_2007 loaded successfully.")
 
 if __name__ == "__main__":
-    load_flights("data/2008.csv.bz2")
+    load_flights("dataverse_files/2007.csv.bz2")

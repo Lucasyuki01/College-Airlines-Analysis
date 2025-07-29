@@ -2,21 +2,26 @@ import pandas as pd
 import psycopg2
 from io import StringIO
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 
 def load_airports(csv_path):
-    # 1. Ler o CSV
+    # 1. Read CSV
+    print('1')
     df = pd.read_csv(csv_path)
 
-    # 2. Limpeza
+    # 2. Cleaning
+    print('2')
     for col in ["iata", "airport", "city", "state", "country"]:
         df[col] = df[col].astype(str).str.strip()
 
-    df = df.dropna(subset=["iata"])  # Remover linhas com chave primária nula
+    df = df.dropna(subset=["iata"])  #Remove rows with NULL primary key
 
-    # 3. Conexão com o banco
-    load_dotenv(dotenv_path="secrets.env")
+    # 3. Database connection
+    print('3')
+    env_path = Path("secrects.env")
+    load_dotenv(dotenv_path=env_path)
 
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -26,11 +31,13 @@ def load_airports(csv_path):
     )
     cursor = conn.cursor()
 
-    # 4. Limpar a tabela antes de inserir
-    cursor.execute("TRUNCATE TABLE airports;")
+    # 4. Table cleaning before insertion
+    print('4')
+    cursor.execute("TRUNCATE TABLE airports CASCADE;")
     conn.commit()
 
-    # 5. Inserção com COPY
+    # 5. Insertion with COPY
+    print('5')
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False, header=False)
     csv_buffer.seek(0)
@@ -43,4 +50,4 @@ def load_airports(csv_path):
     print("Importação de airports.csv concluída com sucesso.")
 
 if __name__ == "__main__":
-    load_airports("data/airports.csv")  # ajuste o caminho conforme necessário
+    load_airports("dataverse_files/airports.csv")

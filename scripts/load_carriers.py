@@ -2,19 +2,21 @@ import pandas as pd
 import psycopg2
 from io import StringIO
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 def load_carriers(csv_path):
-    # 1. Ler o CSV
+    # 1. Read CSV
     df = pd.read_csv(csv_path)
 
-    # 2. Limpeza
-    df["Code"] = df["Code"].astype(str).str.strip()
+    # 2. Cleaning
+    df["Code"] =     df["Code"].astype(str).str.strip()
     df["Description"] = df["Description"].astype(str).str.strip()
-    df = df.dropna(subset=["Code"])  # Remove entradas com chave primária nula
+    df = df.dropna(subset=["Code"])  #Remove rows with NULL primary key
 
-    # 3. Conectar ao banco
-    load_dotenv(dotenv_path="secrets.env")
+    # 3. Connect to database
+    env_path = Path("secrects.env")
+    load_dotenv(dotenv_path=env_path)
 
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -24,11 +26,11 @@ def load_carriers(csv_path):
     )
     cursor = conn.cursor()
 
-    # 4. Limpar a tabela
+    # 4. Clean table
     cursor.execute("TRUNCATE TABLE carriers;")
     conn.commit()
 
-    # 5. Inserção com COPY
+    # 5. COPY inserction
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False, header=False)
     csv_buffer.seek(0)
@@ -41,4 +43,4 @@ def load_carriers(csv_path):
     print("Importação de carriers.csv concluída com sucesso.")
 
 if __name__ == "__main__":
-    load_carriers("data/carriers.csv")
+    load_carriers("dataverse_files/carriers.csv")
