@@ -2,3 +2,4 @@
 secrets.env
 .csv.bz2
 .csv
+dataverse_files/
